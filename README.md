@@ -107,7 +107,7 @@ Current milestone:
 - judge-friendly FastAPI UI wired to the real workflow
 - regression tests and GitHub Actions CI
 
-Next milestone: validate CI for the UI/API path, then deploy the working flow on AWS / AgentCore.
+Next milestone: deploy the working flow on AWS / AgentCore and validate the live judge path.
 
 See [`docs/architecture.md`](docs/architecture.md) for the current boundary and deployment plan.
 
