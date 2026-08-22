@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 import json
+from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
 from .core import JobAssessment, assess_job, build_human_decision_packet
@@ -112,6 +113,15 @@ def create_decision_trace(
     }
     trace_id = sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
     return {**payload, "trace_id": f"sha256:{trace_id}"}
+
+
+def persist_decision_trace(trace: Mapping, path: str | Path) -> Path:
+    """Persist one immutable-style trace artifact without changing its hash semantics."""
+
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(dict(trace), indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
+    return target
 
 
 def jobs_from_dicts(items: Sequence[Mapping[str, str]]) -> list[JobOpportunity]:
