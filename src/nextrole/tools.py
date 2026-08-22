@@ -34,7 +34,7 @@ def assess_job_opportunity(
 
 @tool
 def triage_job_batch(
-    jobs: list[dict],
+    jobs: list[dict[str, str]],
     candidate_skills: list[str],
     target_roles: list[str],
     must_have_skills: list[str],
