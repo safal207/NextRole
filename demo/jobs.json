@@ -1,0 +1,53 @@
+{
+  "candidate": {
+    "skills": [
+      "api",
+      "sql",
+      "rest",
+      "postman",
+      "bpmn",
+      "uml",
+      "integrations",
+      "manual testing"
+    ],
+    "target_roles": ["qa engineer", "system analyst"],
+    "must_have_skills": ["api", "sql"]
+  },
+  "jobs": [
+    {
+      "job_id": "job-001",
+      "title": "System Analyst — Payments",
+      "company": "Northstar Bank",
+      "url": "https://example.test/jobs/001",
+      "description": "Design API and REST integrations for payment services. Work with SQL, BPMN, UML, Postman and cross-team integrations. Manual testing experience is useful for acceptance and release validation."
+    },
+    {
+      "job_id": "job-002",
+      "title": "QA Engineer — Web Platform",
+      "company": "Orbit SaaS",
+      "url": "https://example.test/jobs/002",
+      "description": "Manual testing of web features, API checks in Postman, REST services, SQL validation and regression testing. Experience documenting integrations is a plus."
+    },
+    {
+      "job_id": "job-003",
+      "title": "Senior Java Backend Engineer",
+      "company": "Copper Cloud",
+      "url": "https://example.test/jobs/003",
+      "description": "Build distributed Java services with Kafka, Kubernetes, Spring Boot, PostgreSQL and performance engineering. Strong production coding background required."
+    },
+    {
+      "job_id": "job-004",
+      "title": "Product Designer",
+      "company": "Canvas Labs",
+      "url": "https://example.test/jobs/004",
+      "description": "Own product design, Figma systems, user research, prototyping, interaction design and visual design across mobile products."
+    },
+    {
+      "job_id": "job-005",
+      "title": "System Analyst — Integration Platform",
+      "company": "BridgeWorks",
+      "url": "https://example.test/jobs/005",
+      "description": "Analyze integrations, model BPMN and UML flows, define REST contracts and coordinate delivery. API knowledge required. Familiarity with SQL is desirable but not central to the role."
+    }
+  ]
+}
