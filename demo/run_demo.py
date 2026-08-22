@@ -8,11 +8,13 @@ from nextrole.workflow import (
     assess_opportunity,
     create_decision_trace,
     jobs_from_dicts,
+    persist_decision_trace,
     triage_jobs,
 )
 
 
 FIXTURE = Path(__file__).with_name("jobs.json")
+ARTIFACT = Path("artifacts/decision-trace.json")
 
 
 def main() -> None:
@@ -51,9 +53,11 @@ def main() -> None:
         human_decision="APPLY",
         rationale="Demo decision: strong fit and no missing must-have skills.",
     )
+    path = persist_decision_trace(trace, ARTIFACT)
 
     print("\nHUMAN DECISION TRACE")
     print(json.dumps(trace, indent=2, ensure_ascii=False))
+    print(f"\nSaved: {path}")
 
 
 if __name__ == "__main__":
