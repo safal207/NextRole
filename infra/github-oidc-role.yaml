@@ -1,0 +1,207 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Development-only GitHub Actions OIDC deployment role for NextRole -> Amazon Bedrock AgentCore.
+  Scoped to the immutable NextRole repository subject on main. Designed for hackathon/dev deployment,
+  not as a final production IAM policy.
+
+Parameters:
+  RoleName:
+    Type: String
+    Default: NextRoleGitHubDeployRole
+  GitHubSubject:
+    Type: String
+    Default: repo:safal207@55020240/NextRole@1342506311:ref:refs/heads/main
+  CreateGitHubOidcProvider:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+    Description: Set false when token.actions.githubusercontent.com is already registered in this AWS account.
+  ExistingGitHubOidcProviderArn:
+    Type: String
+    Default: ""
+    Description: Required when CreateGitHubOidcProvider=false.
+
+Conditions:
+  CreateProvider: !Equals [!Ref CreateGitHubOidcProvider, "true"]
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      Tags:
+        - Key: Project
+          Value: NextRole
+        - Key: Purpose
+          Value: GitHubOIDC
+
+  NextRoleGitHubDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Ref RoleName
+      Description: Development deployment role for NextRole GitHub Actions -> Amazon Bedrock AgentCore.
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateProvider
+                - !Ref GitHubOidcProvider
+                - !Ref ExistingGitHubOidcProviderArn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Ref GitHubSubject
+      ManagedPolicyArns:
+        # AWS-managed AgentCore policy is intentionally used for the hackathon/dev bootstrap.
+        # AWS recommends replacing broad development permissions with resource-scoped policies for production.
+        - arn:aws:iam::aws:policy/BedrockAgentCoreFullAccess
+      Policies:
+        - PolicyName: NextRoleAgentCoreCliDevelopment
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: IAMRoleManagement
+                Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:TagRole
+                  - iam:ListRolePolicies
+                  - iam:ListAttachedRolePolicies
+                Resource:
+                  - arn:aws:iam::*:role/*BedrockAgentCore*
+                  - arn:aws:iam::*:role/service-role/*BedrockAgentCore*
+              - Sid: IAMPassRoleAccess
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource:
+                  - arn:aws:iam::*:role/AmazonBedrockAgentCore*
+                  - arn:aws:iam::*:role/service-role/AmazonBedrockAgentCore*
+              - Sid: CodeBuildProjectAccess
+                Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - codebuild:ListBuildsForProject
+                  - codebuild:CreateProject
+                  - codebuild:UpdateProject
+                  - codebuild:BatchGetProjects
+                Resource:
+                  - arn:aws:codebuild:*:*:project/bedrock-agentcore-*
+                  - arn:aws:codebuild:*:*:build/bedrock-agentcore-*
+              - Sid: CodeBuildListAccess
+                Effect: Allow
+                Action:
+                  - codebuild:ListProjects
+                Resource: "*"
+              - Sid: CloudWatchLogsReadAccess
+                Effect: Allow
+                Action:
+                  - logs:GetLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                Resource:
+                  - arn:aws:logs:*:*:log-group:/aws/bedrock-agentcore/*
+                  - arn:aws:logs:*:*:log-group:/aws/codebuild/*
+              - Sid: AgentCoreS3Access
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                  - s3:CreateBucket
+                  - s3:PutLifecycleConfiguration
+                Resource:
+                  - arn:aws:s3:::bedrock-agentcore-*
+                  - arn:aws:s3:::bedrock-agentcore-*/*
+              - Sid: AgentCoreECRRepositoryAccess
+                Effect: Allow
+                Action:
+                  - ecr:CreateRepository
+                  - ecr:DescribeRepositories
+                  - ecr:GetRepositoryPolicy
+                  - ecr:InitiateLayerUpload
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                  - ecr:UploadLayerPart
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:ListImages
+                  - ecr:TagResource
+                Resource:
+                  - arn:aws:ecr:*:*:repository/bedrock-agentcore-*
+              - Sid: ECRAuthorizationAccess
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                Resource: "*"
+        - PolicyName: NextRoleCdkDeploymentDevelopment
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # The current AgentCore CLI uses AWS CDK/CloudFormation for deployment.
+              # This broad deployment statement is development-only; tighten after the runtime ARN is known.
+              - Sid: CloudFormationDevelopmentAccess
+                Effect: Allow
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:DescribeStackResources
+                  - cloudformation:GetTemplate
+                  - cloudformation:GetTemplateSummary
+                  - cloudformation:ListStackResources
+                Resource: "*"
+              - Sid: CdkBootstrapParameterRead
+                Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: arn:aws:ssm:*:*:parameter/cdk-bootstrap/*
+              - Sid: CdkBootstrapRoleAssume
+                Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource: arn:aws:iam::*:role/cdk-*
+              - Sid: CallerIdentity
+                Effect: Allow
+                Action:
+                  - sts:GetCallerIdentity
+                Resource: "*"
+      Tags:
+        - Key: Project
+          Value: NextRole
+        - Key: Environment
+          Value: hackathon-dev
+        - Key: ManagedBy
+          Value: CloudFormation
+
+Outputs:
+  DeploymentRoleArn:
+    Description: Put this value into the GitHub repository variable AWS_ROLE_ARN.
+    Value: !GetAtt NextRoleGitHubDeployRole.Arn
+  ExpectedGitHubSubject:
+    Description: Immutable GitHub OIDC subject trusted by the role.
+    Value: !Ref GitHubSubject
+  OidcProviderArn:
+    Description: GitHub OIDC provider ARN used by the role.
+    Value: !If
+      - CreateProvider
+      - !Ref GitHubOidcProvider
+      - !Ref ExistingGitHubOidcProviderArn
