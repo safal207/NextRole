@@ -6,7 +6,7 @@
 
 NextRole is a new AI agent being built for the **Agents for Humans Hackathon** with the **Strands Agents SDK**.
 
-Instead of giving a job seeker another dashboard to babysit, NextRole is designed to handle repetitive job-search work in the background: evaluate opportunities, explain fit and gaps, prepare the next action, and surface only when a real human career decision is needed.
+Instead of giving a job seeker another dashboard to babysit, NextRole is designed to handle repetitive job-search work in the background: evaluate opportunities, explain fit and gaps, reduce low-value noise, and surface only when a real human career decision is needed.
 
 ## Hackathon MVP
 
@@ -15,22 +15,48 @@ One narrow end-to-end workflow:
 ```text
 job opportunities
       ↓
-Strands Agent
+Strands Agent + triage_job_batch tool
       ↓
-structured fit / gaps / risk analysis
+deterministic fit / gap evidence
       ↓
-low-fit opportunity → skip recommendation
-      ↓
-high-fit opportunity → prepare application draft
-      ↓
-Human Decision Gate
+low-fit opportunity → quiet SKIP bucket
+medium-fit opportunity → REVIEW bucket
+strong opportunity → Human Decision Queue
       ↓
 APPLY / SKIP / WHY?
       ↓
-decision trace
+deterministic decision trace
 ```
 
-The agent may recommend and prepare. **The human remains the authority for the final application decision.**
+The agent may analyze, prioritize and prepare. **The human remains the authority for the final application decision.**
+
+## Runnable demo
+
+Install the project and run the deterministic fixture:
+
+```bash
+python -m pip install -e ".[dev]"
+pytest -q
+PYTHONPATH=src python demo/run_demo.py
+```
+
+The fixture contains several deliberately different jobs. NextRole sorts them into `surfaced`, `review`, and `skipped` buckets. A strong opportunity receives an `APPLY / SKIP / WHY` packet; the demo records an explicit human `APPLY` choice as a deterministic SHA-256 decision trace at:
+
+```text
+artifacts/decision-trace.json
+```
+
+The trace records the exact opportunity, assessment, human choice, rationale, and whether application action was authorized. The trace is evidence of the decision boundary; it is **not** a claim that an external application was submitted.
+
+## Strands integration
+
+`src/nextrole/agent.py` defines the NextRole Strands agent. Its tools currently include:
+
+- `triage_job_batch` — batch job triage with a short human interrupt queue
+- `assess_job_opportunity` — transparent deterministic scoring for one role
+- `create_human_decision_packet` — generates the human-facing APPLY / SKIP / WHY boundary
+
+The LLM is not allowed to invent fit scores when deterministic tool evidence exists, and it is not allowed to claim an application was submitted without external confirmation.
 
 ## Why this matters
 
@@ -49,9 +75,20 @@ NextRole aims to automate the repetitive layer without automating away the decis
 
 ## Project status
 
-🚧 Early hackathon build. This repository was created during the 2026 Agents for Humans submission period.
+🚧 Active hackathon build. This repository was created during the 2026 Agents for Humans submission period.
 
-The first milestone is a working local Strands agent with a deterministic demo dataset and a human decision gate. The second milestone is a live AWS deployment.
+Current milestone:
+
+- batch triage fixture
+- deterministic fit/gap scoring
+- Strands batch and single-opportunity tools
+- human decision gate
+- deterministic persisted decision trace
+- regression tests and GitHub Actions CI
+
+Next milestone: connect the working flow to a small judge-friendly UI and validate a live AWS / AgentCore path.
+
+See [`docs/architecture.md`](docs/architecture.md) for the current boundary and deployment plan.
 
 ## Pre-existing work disclosure
 
