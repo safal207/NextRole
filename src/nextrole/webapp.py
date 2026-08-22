@@ -56,6 +56,13 @@ def _find_job(job_id: str, jobs: list[JobOpportunity]) -> JobOpportunity:
     raise HTTPException(status_code=404, detail="Job not found")
 
 
+def _artifact_display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(WEB_DIR / "index.html")
@@ -116,7 +123,7 @@ def api_decision(request: DecisionRequest) -> dict:
         "decision": decision,
         "application_authorized": trace["application_authorized"],
         "trace_id": trace["trace_id"],
-        "artifact_path": str(artifact_path.relative_to(REPO_ROOT)),
+        "artifact_path": _artifact_display_path(artifact_path),
         "explanation": explanation,
     }
 
