@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
+
 from nextrole.workflow import (
     CandidateProfile,
     JobOpportunity,
     assess_opportunity,
     create_decision_trace,
+    persist_decision_trace,
     triage_jobs,
 )
 
@@ -99,3 +102,25 @@ def test_why_does_not_authorize_application() -> None:
     )
 
     assert trace["application_authorized"] is False
+
+
+def test_trace_can_be_persisted_without_mutation(tmp_path) -> None:
+    job = JobOpportunity(
+        job_id="persisted",
+        title="QA Engineer",
+        company="Example",
+        description="API SQL REST Postman manual testing.",
+    )
+    assessment = assess_opportunity(job, PROFILE)
+    trace = create_decision_trace(
+        job=job,
+        assessment=assessment,
+        human_decision="SKIP",
+        rationale="Human chose not to pursue this role.",
+    )
+
+    path = persist_decision_trace(trace, tmp_path / "decision-trace.json")
+    loaded = json.loads(path.read_text(encoding="utf-8"))
+
+    assert loaded == trace
+    assert loaded["application_authorized"] is False
