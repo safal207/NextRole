@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NextRole — Autonomous job search</title>
+  <meta name="description" content="NextRole does the job-search busywork and asks you only when a real career decision needs a human." />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark">N</div>
+        <div>
+          <div class="brand-name">NextRole</div>
+          <div class="brand-sub">Your autonomous job-search agent</div>
+        </div>
+      </div>
+      <div class="agent-state"><span class="pulse"></span> Agent active</div>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">BACKGROUND AUTONOMY · HUMAN AUTHORITY</p>
+      <h1>It does the search.<br /><span>You make the career decisions.</span></h1>
+      <p class="hero-copy">NextRole quietly filters low-value opportunities, keeps borderline roles for review, and interrupts you only when a real decision is worth your attention.</p>
+    </section>
+
+    <section class="pipeline-card" aria-labelledby="pipeline-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">LIVE DEMO FIXTURE</p>
+          <h2 id="pipeline-title">Five jobs in. One decision out.</h2>
+        </div>
+        <button id="rerun" class="ghost-button">Run triage</button>
+      </div>
+
+      <div class="stats" id="stats">
+        <div class="stat"><span class="stat-number" id="totalJobs">—</span><span class="stat-label">Jobs scanned</span></div>
+        <div class="stat review"><span class="stat-number" id="reviewCount">—</span><span class="stat-label">Review quietly</span></div>
+        <div class="stat skip"><span class="stat-number" id="skipCount">—</span><span class="stat-label">Skipped</span></div>
+        <div class="stat human"><span class="stat-number" id="humanCount">—</span><span class="stat-label">Human decision</span></div>
+      </div>
+    </section>
+
+    <section class="decision-layout">
+      <article class="decision-card" id="decisionCard">
+        <div class="loading">Running deterministic triage…</div>
+      </article>
+
+      <aside class="evidence-card">
+        <p class="eyebrow">WHY THIS REACHED YOU</p>
+        <h3>Evidence, not vibes.</h3>
+        <div id="evidenceBody" class="evidence-body">
+          <p>NextRole uses deterministic scoring tools before the agent recommends anything. The LLM cannot invent the fit score.</p>
+        </div>
+        <div class="boundary-note">
+          <strong>Decision boundary</strong>
+          <span>APPLY authorizes the next application step. It does not falsely claim an external application was submitted.</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="quiet-queue">
+      <div class="queue-column">
+        <div class="queue-header"><span>REVIEW</span><span id="reviewBadge" class="badge">0</span></div>
+        <div id="reviewJobs" class="queue-list"></div>
+      </div>
+      <div class="queue-column">
+        <div class="queue-header"><span>QUIETLY SKIPPED</span><span id="skipBadge" class="badge">0</span></div>
+        <div id="skipJobs" class="queue-list"></div>
+      </div>
+    </section>
+
+    <section id="tracePanel" class="trace-panel hidden">
+      <div>
+        <p class="eyebrow">DECISION TRACE</p>
+        <h3 id="traceTitle">Decision recorded</h3>
+      </div>
+      <div class="trace-grid">
+        <div><span>Decision</span><strong id="traceDecision">—</strong></div>
+        <div><span>Authorized</span><strong id="traceAuthorized">—</strong></div>
+        <div><span>Trace</span><code id="traceId">—</code></div>
+      </div>
+    </section>
+
+    <footer>
+      <span>Built for Agents for Humans with Strands Agents SDK.</span>
+      <span>Human-in-the-loop by design.</span>
+    </footer>
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
