@@ -78,6 +78,34 @@ The trace records the exact opportunity, assessment, human choice, rationale, an
 
 The LLM is not allowed to invent fit scores when deterministic tool evidence exists, and it is not allowed to claim an application was submitted without external confirmation.
 
+## Amazon Bedrock AgentCore path
+
+NextRole now has an official AgentCore Runtime entrypoint:
+
+```text
+src/nextrole/agentcore_app.py
+```
+
+It uses `BedrockAgentCoreApp` around the existing Strands agent, keeping the same deterministic tools and human-authority boundary. The model can be pinned with `NEXTROLE_MODEL_ID`; otherwise Strands uses its configured/default Amazon Bedrock provider.
+
+Local runtime wrapper:
+
+```bash
+nextrole-agentcore
+```
+
+Then invoke:
+
+```bash
+curl -X POST http://localhost:8080/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"Explain why NextRole surfaces only real career decisions."}'
+```
+
+A real AWS deployment requires AWS credentials, IAM permissions and Bedrock model access. **This repository does not claim a live AgentCore deployment until a real runtime has been deployed and invoked successfully.**
+
+See [`docs/agentcore-deployment.md`](docs/agentcore-deployment.md) for the current `@aws/agentcore` BYO deployment runbook.
+
 ## Why this matters
 
 Job searching is full of repetitive work that still contains high-stakes human judgment. People repeatedly scan descriptions, compare requirements, identify gaps, tailor applications, and decide where to spend their limited attention.
@@ -91,7 +119,7 @@ NextRole aims to automate the repetitive layer without automating away the decis
 - FastAPI judge demo
 - Amazon Bedrock model provider
 - deterministic job-analysis and human-decision tools
-- Amazon Bedrock AgentCore deployment (target, if deployment validation is successful)
+- Amazon Bedrock AgentCore Runtime entrypoint and BYO deployment path
 
 ## Project status
 
@@ -105,9 +133,10 @@ Current milestone:
 - human decision gate
 - deterministic persisted decision trace
 - judge-friendly FastAPI UI wired to the real workflow
+- AgentCore Runtime entrypoint with testable payload boundary
 - regression tests and GitHub Actions CI
 
-Next milestone: deploy the working flow on AWS / AgentCore and validate the live judge path.
+Next milestone: perform the real AWS deployment, capture runtime evidence, and validate the live judge path.
 
 See [`docs/architecture.md`](docs/architecture.md) for the current boundary and deployment plan.
 
