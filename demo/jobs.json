@@ -26,7 +26,7 @@
       "title": "QA Engineer — Web Platform",
       "company": "Orbit SaaS",
       "url": "https://example.test/jobs/002",
-      "description": "Manual testing of web features, API checks in Postman, REST services, SQL validation and regression testing. Experience documenting integrations is a plus."
+      "description": "Manual testing of web features, API checks in Postman, REST services and regression testing. Experience documenting integrations is a plus. Database querying is handled by a separate data team."
     },
     {
       "job_id": "job-003",
@@ -47,7 +47,7 @@
       "title": "System Analyst — Integration Platform",
       "company": "BridgeWorks",
       "url": "https://example.test/jobs/005",
-      "description": "Analyze integrations, model BPMN and UML flows, define REST contracts and coordinate delivery. API knowledge required. Familiarity with SQL is desirable but not central to the role."
+      "description": "Analyze integrations, model BPMN and UML flows, define REST contracts and coordinate delivery. API knowledge required. Data validation is owned by another team."
     }
   ]
 }
