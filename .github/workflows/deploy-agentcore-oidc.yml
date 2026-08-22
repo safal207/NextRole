@@ -1,0 +1,116 @@
+name: Deploy AgentCore (OIDC)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".deploy/oidc-trigger.json"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: nextrole-agentcore-oidc
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ vars.AWS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      NEXTROLE_MODEL_ID: ${{ vars.NEXTROLE_MODEL_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Configure AWS credentials with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          mask-aws-account-id: true
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Verify NextRole before deploy
+        run: |
+          python -m pip install -e ".[dev]"
+          pytest -q
+
+      - name: Install AgentCore CLI
+        run: |
+          npm install -g @aws/agentcore
+          agentcore --version
+
+      - name: Build AgentCore BYO workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORK="$RUNNER_TEMP/nextrole-agentcore"
+          mkdir -p "$WORK"
+          cd "$WORK"
+
+          agentcore create \
+            --name NextRoleDeploy \
+            --no-agent \
+            --skip-git \
+            --skip-install
+
+          cd NextRoleDeploy
+          agentcore add agent \
+            --name NextRoleAgent \
+            --type byo \
+            --code-location "$GITHUB_WORKSPACE" \
+            --entrypoint src/nextrole/agentcore_app.py \
+            --language Python \
+            --framework Strands \
+            --model-provider Bedrock \
+            --build CodeZip
+
+          agentcore validate --json | tee "$RUNNER_TEMP/agentcore-validate.json"
+
+      - name: Deploy NextRole to AgentCore
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/nextrole-agentcore/NextRoleDeploy"
+          agentcore deploy -y --json | tee "$RUNNER_TEMP/agentcore-deploy.json"
+          agentcore status --json | tee "$RUNNER_TEMP/agentcore-status.json"
+
+      - name: Smoke invoke deployed agent
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/nextrole-agentcore/NextRoleDeploy"
+          agentcore invoke --prompt "Triage job opportunities quietly and surface only real human career decisions." \
+            | tee "$RUNNER_TEMP/agentcore-invoke.txt"
+
+      - name: Upload deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextrole-agentcore-oidc-evidence-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/agentcore-validate.json
+            ${{ runner.temp }}/agentcore-deploy.json
+            ${{ runner.temp }}/agentcore-status.json
+            ${{ runner.temp }}/agentcore-invoke.txt
+          if-no-files-found: warn
+          retention-days: 14
