@@ -93,7 +93,7 @@ def create_decision_trace(
     human_decision: str,
     rationale: str = "",
 ) -> dict:
-    """Create a deterministic evidence record for a human career decision.
+    """Create a deterministic, JSON-native evidence record for a human career decision.
 
     APPLY and SKIP are terminal decisions. WHY records a request for explanation and
     does not authorize application submission.
@@ -103,7 +103,7 @@ def create_decision_trace(
     if decision not in {"APPLY", "SKIP", "WHY"}:
         raise ValueError("human_decision must be APPLY, SKIP, or WHY")
 
-    payload = {
+    raw_payload = {
         "version": "nextrole-decision-trace-v1",
         "job": asdict(job),
         "assessment": assessment.to_dict(),
@@ -111,6 +111,11 @@ def create_decision_trace(
         "rationale": rationale.strip(),
         "application_authorized": decision == "APPLY",
     }
+
+    # Normalize tuples and other JSON-compatible Python containers before hashing.
+    # This guarantees that the in-memory trace and persisted JSON round-trip to the
+    # same structure on every supported runtime.
+    payload = json.loads(_canonical_json(raw_payload))
     trace_id = sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
     return {**payload, "trace_id": f"sha256:{trace_id}"}
 

@@ -30,21 +30,41 @@ deterministic decision trace
 
 The agent may analyze, prioritize and prepare. **The human remains the authority for the final application decision.**
 
-## Runnable demo
+## Judge-friendly web demo
 
-Install the project and run the deterministic fixture:
+Install and launch the local UI:
 
 ```bash
 python -m pip install -e ".[dev]"
+nextrole-web
+```
+
+Then open:
+
+```text
+http://localhost:8080
+```
+
+The dashboard shows the complete demo boundary in one screen: five opportunities are triaged into `2 SKIP`, `2 REVIEW`, and `1 HUMAN_DECISION`. The human-facing card exposes the evidence-backed `APPLY / SKIP / WHY` decision. A click calls the real FastAPI decision endpoint and persists a SHA-256 decision trace.
+
+Useful endpoints:
+
+```text
+GET  /health
+GET  /api/triage
+POST /api/decision
+```
+
+## Runnable CLI fixture
+
+You can also run the deterministic fixture without a browser:
+
+```bash
 pytest -q
 PYTHONPATH=src python demo/run_demo.py
 ```
 
-The fixture contains several deliberately different jobs. NextRole sorts them into `surfaced`, `review`, and `skipped` buckets. A strong opportunity receives an `APPLY / SKIP / WHY` packet; the demo records an explicit human `APPLY` choice as a deterministic SHA-256 decision trace at:
-
-```text
-artifacts/decision-trace.json
-```
+The fixture contains several deliberately different jobs. NextRole sorts them into `surfaced`, `review`, and `skipped` buckets. A strong opportunity receives an `APPLY / SKIP / WHY` packet; the CLI demo records an explicit human `APPLY` choice as a deterministic SHA-256 decision trace.
 
 The trace records the exact opportunity, assessment, human choice, rationale, and whether application action was authorized. The trace is evidence of the decision boundary; it is **not** a claim that an external application was submitted.
 
@@ -68,10 +88,10 @@ NextRole aims to automate the repetitive layer without automating away the decis
 
 - Python 3.10+
 - Strands Agents SDK
+- FastAPI judge demo
 - Amazon Bedrock model provider
 - deterministic job-analysis and human-decision tools
 - Amazon Bedrock AgentCore deployment (target, if deployment validation is successful)
-- lightweight web demo
 
 ## Project status
 
@@ -84,9 +104,10 @@ Current milestone:
 - Strands batch and single-opportunity tools
 - human decision gate
 - deterministic persisted decision trace
+- judge-friendly FastAPI UI wired to the real workflow
 - regression tests and GitHub Actions CI
 
-Next milestone: connect the working flow to a small judge-friendly UI and validate a live AWS / AgentCore path.
+Next milestone: deploy the working flow on AWS / AgentCore and validate the live judge path.
 
 See [`docs/architecture.md`](docs/architecture.md) for the current boundary and deployment plan.
 
