@@ -44,7 +44,7 @@ The current AgentCore CLI deploy flow also uses AWS CDK. Bootstrap the target AW
 From the NextRole repository root:
 
 ```bash
-./scripts/bootstrap-aws-oidc.sh us-east-1
+bash scripts/bootstrap-aws-oidc.sh us-east-1
 ```
 
 The region can be replaced with the region where you will use Amazon Bedrock and AgentCore.
