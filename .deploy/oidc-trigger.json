@@ -1,0 +1,6 @@
+{
+  "enabled": false,
+  "nonce": 0,
+  "requested_by": "setup",
+  "reason": "Change nonce after AWS_DEPLOY_ENABLED=true and OIDC variables are configured."
+}
