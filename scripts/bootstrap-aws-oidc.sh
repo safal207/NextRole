@@ -7,6 +7,7 @@ REGION="${1:-${AWS_REGION:-us-east-1}}"
 ROLE_NAME="${NEXTROLE_OIDC_ROLE_NAME:-NextRoleGitHubDeployRole}"
 TEMPLATE="infra/github-oidc-role.yaml"
 GITHUB_PROVIDER_SUFFIX="oidc-provider/token.actions.githubusercontent.com"
+CDK_BOOTSTRAP_PARAMETER="/cdk-bootstrap/hnb659fds/version"
 
 for cmd in aws gh; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -22,6 +23,7 @@ fi
 
 echo "==> AWS identity"
 aws sts get-caller-identity --region "$REGION"
+ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text --region "$REGION")"
 
 echo "==> GitHub identity"
 gh auth status
@@ -66,6 +68,25 @@ if [[ -z "$ROLE_ARN" || "$ROLE_ARN" == "None" ]]; then
   exit 1
 fi
 
+CDK_VERSION="$(
+  aws ssm get-parameter \
+    --region "$REGION" \
+    --name "$CDK_BOOTSTRAP_PARAMETER" \
+    --query "Parameter.Value" \
+    --output text 2>/dev/null || true
+)"
+
+if [[ -n "$CDK_VERSION" && "$CDK_VERSION" != "None" ]]; then
+  echo "==> AWS CDK is already bootstrapped in $ACCOUNT_ID/$REGION (version $CDK_VERSION)."
+else
+  if ! command -v npx >/dev/null 2>&1; then
+    echo "ERROR: CDK bootstrap is missing and 'npx' is not available. Install Node.js/npm, then rerun." >&2
+    exit 1
+  fi
+  echo "==> Bootstrapping AWS CDK in $ACCOUNT_ID/$REGION"
+  npx --yes aws-cdk@latest bootstrap "aws://${ACCOUNT_ID}/${REGION}"
+fi
+
 echo "==> Writing non-secret deployment variables to GitHub"
 gh variable set AWS_ROLE_ARN --repo "$REPO" --body "$ROLE_ARN"
 gh variable set AWS_REGION --repo "$REPO" --body "$REGION"
@@ -83,10 +104,11 @@ OIDC bridge bootstrap complete.
 AWS role:   $ROLE_ARN
 AWS region: $REGION
 Repository: $REPO
+CDK:        bootstrapped
 Safety:     AWS_DEPLOY_ENABLED=false
 
 The bridge is deliberately disabled after bootstrap.
-When model access and CDK bootstrap are ready, enable it with:
+After Bedrock model access is confirmed, enable it with:
 
   gh variable set AWS_DEPLOY_ENABLED --repo $REPO --body true
 
