@@ -4,13 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nextrole-agent"
-version = "0.2.0"
+version = "0.3.0"
 description = "Autonomous job-search agent that handles the busywork and asks a human at real career decision points."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 dependencies = [
   "strands-agents>=1.0.0",
+  "bedrock-agentcore>=1.0.0",
   "fastapi>=0.115",
   "uvicorn>=0.30",
 ]
@@ -23,6 +24,7 @@ dev = [
 
 [project.scripts]
 nextrole-web = "nextrole.webapp:run"
+nextrole-agentcore = "nextrole.agentcore_app:run"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/nextrole"]
