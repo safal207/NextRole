@@ -5,6 +5,7 @@ from pathlib import Path
 
 from nextrole.workflow import (
     CandidateProfile,
+    assess_opportunity,
     create_decision_trace,
     jobs_from_dicts,
     triage_jobs,
@@ -43,9 +44,7 @@ def main() -> None:
 
     selected = result.surfaced[0]
     selected_job = next(job for job in jobs if job.job_id == selected["job_id"])
-    assessment = __import__("nextrole.workflow", fromlist=["assess_opportunity"]).assess_opportunity(
-        selected_job, profile
-    )
+    assessment = assess_opportunity(selected_job, profile)
     trace = create_decision_trace(
         job=selected_job,
         assessment=assessment,
