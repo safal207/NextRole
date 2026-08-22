@@ -24,6 +24,9 @@ dev = [
 [project.scripts]
 nextrole-web = "nextrole.webapp:run"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/nextrole"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
