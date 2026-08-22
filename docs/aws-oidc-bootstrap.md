@@ -8,6 +8,7 @@ This is the one manual trust-establishment step before ChatGPT can operate the e
 - an IAM role named `NextRoleGitHubDeployRole` by default;
 - a trust relationship restricted to the immutable OIDC subject for **only** `safal207/NextRole` on `main`;
 - development/hackathon permissions required by the current Amazon Bedrock AgentCore CLI deployment path;
+- AWS CDK bootstrap resources in the selected account/region when they are missing;
 - GitHub repository variables `AWS_ROLE_ARN`, `AWS_REGION`, and `AWS_DEPLOY_ENABLED=false`.
 
 No AWS access key is created or stored in GitHub.
@@ -28,7 +29,7 @@ sts.amazonaws.com
 
 ## Before running
 
-You need an AWS identity that is allowed to create the one-time IAM/CloudFormation resources and a GitHub CLI login that can set Actions variables on `safal207/NextRole`.
+You need an AWS identity that is allowed to create the one-time IAM/CloudFormation/CDK resources and a GitHub CLI login that can set Actions variables on `safal207/NextRole`.
 
 Required local tools:
 
@@ -37,9 +38,9 @@ aws
 gh
 ```
 
-The current AgentCore CLI deploy flow also uses AWS CDK. Bootstrap the target AWS account/region once before enabling GitHub deployment.
+Node.js/npm is only required when the selected AWS account/region has not yet been CDK-bootstrapped; the script uses `npx aws-cdk@latest` automatically in that case.
 
-## Fast path
+## Fast path — one command
 
 From the NextRole repository root:
 
@@ -55,24 +56,13 @@ The script:
 2. detects whether the AWS account already has the GitHub OIDC provider;
 3. deploys `infra/github-oidc-role.yaml` with CloudFormation;
 4. reads the role ARN from the stack output;
-5. writes the non-secret role ARN and region into GitHub Actions variables;
-6. intentionally leaves `AWS_DEPLOY_ENABLED=false`.
-
-## CDK bootstrap
-
-The current AgentCore CLI uses AWS CDK/CloudFormation. Before enabling the bridge, bootstrap the target account/region with an administrative setup identity:
-
-```bash
-ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
-REGION="us-east-1"
-npx aws-cdk@latest bootstrap "aws://${ACCOUNT_ID}/${REGION}"
-```
-
-Use the same region that was passed to `bootstrap-aws-oidc.sh`.
+5. checks the standard CDK bootstrap SSM parameter and bootstraps CDK automatically when missing;
+6. writes the non-secret role ARN and region into GitHub Actions variables;
+7. intentionally leaves `AWS_DEPLOY_ENABLED=false`.
 
 ## Enable the bridge
 
-Only after the IAM role, CDK bootstrap, and Bedrock model access are ready:
+Only after Bedrock model access is confirmed:
 
 ```bash
 gh variable set AWS_DEPLOY_ENABLED \
