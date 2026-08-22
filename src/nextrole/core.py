@@ -26,8 +26,14 @@ def _normalize_terms(values: Iterable[str]) -> set[str]:
     return {value.strip().lower() for value in values if value and value.strip()}
 
 
-def _tokens(text: str) -> set[str]:
-    return {token.lower() for token in _WORD.findall(text)}
+def _normalize_text(value: str) -> str:
+    return " ".join(token.lower() for token in _WORD.findall(value))
+
+
+def _contains_term(text: str, term: str) -> bool:
+    normalized_text = f" {_normalize_text(text)} "
+    normalized_term = _normalize_text(term)
+    return bool(normalized_term) and f" {normalized_term} " in normalized_text
 
 
 def assess_job(
@@ -48,16 +54,15 @@ def assess_job(
     skills = _normalize_terms(candidate_skills)
     must_have = _normalize_terms(must_have_skills)
     targets = _normalize_terms(target_roles)
-    haystack = _tokens(f"{title} {description}")
+    searchable_text = f"{title} {description}"
 
-    matched = sorted(skill for skill in skills if skill in haystack)
-    missing = sorted(skill for skill in must_have if skill not in haystack)
+    matched = sorted(skill for skill in skills if _contains_term(searchable_text, skill))
+    missing = sorted(skill for skill in must_have if not _contains_term(searchable_text, skill))
 
     skill_score = 0 if not skills else round(70 * len(matched) / len(skills))
     role_score = 0
-    lowered_title = title.lower()
     if targets:
-        role_score = 20 if any(target in lowered_title for target in targets) else 0
+        role_score = 20 if any(_contains_term(title, target) for target in targets) else 0
     else:
         role_score = 10
 
